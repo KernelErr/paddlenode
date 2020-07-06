@@ -20,6 +20,14 @@ namespace paddle
             config.set_model_from_file(model_name);
         }
 
+        void PaddleLite::set_threads(int t){
+            config.set_threads(t);
+        }
+
+        void PaddleLite::set_power_mode(int pm){
+            config.set_power_mode(PowerMode(pm));
+        }
+
         int64_t PaddleLite::ShapeProduction(const shape_t &shape)
         {
             int64_t res = 1;

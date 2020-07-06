@@ -19,6 +19,8 @@ namespace paddle
             PaddleLite();
             ~PaddleLite();
             void set_model_file(std::string model_name);
+            void set_threads(int);
+            void set_power_mode(int);
             float* infer_float(float* input_data, std::vector<int64_t> shape);
         };
     } // namespace lite_api
