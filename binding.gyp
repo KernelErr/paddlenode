@@ -5,7 +5,7 @@
     "targets": [
         {
             'target_name': "paddlenode",
-            'sources': ["paddlelib.h","paddlelib.cc","paddlenode.cc"],
+            'sources': ["nodehelper.h","paddlelib.h","paddlelib.cc","paddlenode.cc"],
             'defines': [
             ],
             'include_dirs': [

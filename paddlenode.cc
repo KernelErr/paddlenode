@@ -4,102 +4,96 @@
 #include <node_api.h>
 #include <assert.h>
 #include "paddlelib.h"
+#include "nodehelper.h"
 using namespace paddle::lite_api;
 
 PaddleLite paddlelite;
 
 napi_value set_model_file(napi_env env, napi_callback_info info)
 {
-    napi_status status;
     size_t argc = 1;
     napi_value args[1];
     char *model_file = new char[1001];
-    status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
     if (argc != 1)
     {
         napi_throw_error(env, NULL, "Check the amount of arguments.");
         return NULL;
     }
     napi_valuetype valuetype;
-    status = napi_typeof(env, args[0], &valuetype);
+    NAPI_CALL(env, napi_typeof(env, args[0], &valuetype));
     if (valuetype != napi_string)
     {
         napi_throw_error(env, NULL, "Wrong argument type.");
         return NULL;
     }
-    status = napi_get_value_string_utf8(env, args[0], model_file, sizeof(char) * 1001, NULL);
+    NAPI_CALL(env, napi_get_value_string_utf8(env, args[0], model_file, sizeof(char) * 1001, NULL));
     paddlelite.set_model_file(model_file);
     napi_value result = args[0];
-    assert(status == napi_ok);
     return result;
 }
 
 napi_value set_threads(napi_env env, napi_callback_info info)
 {
-    napi_status status;
     size_t argc = 1;
     napi_value args[1];
     int32_t threads;
-    status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
     if (argc != 1)
     {
         napi_throw_error(env, NULL, "Check the amount of arguments.");
         return NULL;
     }
     napi_valuetype valuetype;
-    status = napi_typeof(env, args[0], &valuetype);
+    NAPI_CALL(env, napi_typeof(env, args[0], &valuetype));
     if (valuetype != napi_number)
     {
         napi_throw_error(env, NULL, "Wrong argument type.");
         return NULL;
     }
-    status = napi_get_value_int32(env, args[0], &threads);
+    NAPI_CALL(env, napi_get_value_int32(env, args[0], &threads));
     paddlelite.set_threads(threads);
     napi_value result = args[0];
-    assert(status == napi_ok);
     return result;
 }
 
 napi_value set_power_mode(napi_env env, napi_callback_info info)
 {
-    napi_status status;
     size_t argc = 1;
     napi_value args[1];
     int32_t powermode;
-    status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
     if (argc != 1)
     {
         napi_throw_error(env, NULL, "Check the amount of arguments.");
         return NULL;
     }
     napi_valuetype valuetype;
-    status = napi_typeof(env, args[0], &valuetype);
+    NAPI_CALL(env, napi_typeof(env, args[0], &valuetype));
     if (valuetype != napi_number)
     {
         napi_throw_error(env, NULL, "Wrong argument type.");
         return NULL;
     }
-    status = napi_get_value_int32(env, args[0], &powermode);
+    NAPI_CALL(env, napi_get_value_int32(env, args[0], &powermode));
     paddlelite.set_power_mode(powermode);
     napi_value result = args[0];
-    assert(status == napi_ok);
     return result;
 }
 
 napi_value infer_float(napi_env env, napi_callback_info info)
 {
-    napi_status status;
     size_t argc = 2;
     napi_value args[2];
-    status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
     if (argc != 2)
     {
         napi_throw_error(env, NULL, "Check the amount of arguments.");
         return NULL;
     }
     napi_valuetype input_valuetype, shape_valuetype;
-    status = napi_typeof(env, args[0], &input_valuetype);
-    status = napi_typeof(env, args[1], &shape_valuetype);
+    NAPI_CALL(env, napi_typeof(env, args[0], &input_valuetype));
+    NAPI_CALL(env, napi_typeof(env, args[1], &shape_valuetype));
     if (input_valuetype != napi_object || shape_valuetype != napi_object)
     {
         napi_throw_error(env, NULL, "Wrong argument type.");
@@ -107,14 +101,14 @@ napi_value infer_float(napi_env env, napi_callback_info info)
     }
     std::vector<int64_t> shape;
     uint32_t i, input_length, shape_length, input_size = 1;
-    status = napi_get_array_length(env, args[0], &input_length);
-    status = napi_get_array_length(env, args[1], &shape_length);
+    NAPI_CALL(env, napi_get_array_length(env, args[0], &input_length));
+    NAPI_CALL(env, napi_get_array_length(env, args[1], &shape_length));
     for (i = 0; i < shape_length; i++)
     {
         napi_value e;
         int g;
-        status = napi_get_element(env, args[1], i, &e);
-        napi_get_value_int32(env, e, &g);
+        NAPI_CALL(env, napi_get_element(env, args[1], i, &e));
+        NAPI_CALL(env, napi_get_value_int32(env, e, &g));
         shape.push_back(g);
         input_size *= g;
     }
@@ -128,21 +122,20 @@ napi_value infer_float(napi_env env, napi_callback_info info)
     {
         napi_value e;
         double g;
-        status = napi_get_element(env, args[0], i, &e);
-        napi_get_value_double(env, e, &g);
+        NAPI_CALL(env, napi_get_element(env, args[0], i, &e));
+        NAPI_CALL(env, napi_get_value_double(env, e, &g));
         *(input_data + i) = (float)g;
     }
     float *infer_res;
     infer_res = paddlelite.infer_float(input_data, shape);
     napi_value ret;
-    status = napi_create_array(env, &ret);
+    NAPI_CALL(env, napi_create_array(env, &ret));
     for (i = 0; i < *infer_res; i++)
     {
         napi_value e;
-        status = napi_create_double(env, *(infer_res + i), &e);
-        status = napi_set_element(env, ret, i, e);
+        NAPI_CALL(env, napi_create_double(env, *(infer_res + i), &e));
+        NAPI_CALL(env, napi_set_element(env, ret, i, e));
     }
-    assert(status == napi_ok);
     return ret;
 }
 
