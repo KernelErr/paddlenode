@@ -144,7 +144,7 @@ napi_value infer_float(napi_env env, napi_callback_info info)
     return ret;
 }
 
-napi_value image_file_classfication(napi_env env, napi_callback_info info)
+napi_value image_file_classification(napi_env env, napi_callback_info info)
 {
     char *image_path = new char[1001];
     double scalefactor;
@@ -249,7 +249,7 @@ napi_value Init(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("set_threads", set_threads),
         DECLARE_NAPI_METHOD("set_power_mode", set_power_mode),
         DECLARE_NAPI_METHOD("infer_float", infer_float),
-        DECLARE_NAPI_METHOD("image_file_classfication", image_file_classfication)};
+        DECLARE_NAPI_METHOD("image_file_classification", image_file_classification)};
     status = napi_define_properties(env, exports, 5, descriptors);
     assert(status == napi_ok);
     return exports;
