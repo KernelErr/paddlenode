@@ -1,4 +1,6 @@
 # paddle node
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FKernelErr%2Fpaddlenode.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FKernelErr%2Fpaddlenode?ref=badge_shield)
+
 A third-party node.js addon for Paddle Lite.
 
 Tested on Windows 10, Node.js v12.16.3.
@@ -22,3 +24,6 @@ addon.infer_float(arr,[1, 3, 224, 224]);
 ```
 
 The array returned is calculated from the model. But we manually add an element to indicate the size of the array, it's located at the first position.
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FKernelErr%2Fpaddlenode.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FKernelErr%2Fpaddlenode?ref=badge_large)
