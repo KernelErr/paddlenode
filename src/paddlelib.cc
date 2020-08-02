@@ -1,63 +1,56 @@
+#include <numeric>
 #include <iostream>
-#include <vector>
-#include "paddle_api.h"
+#include <memory>
+#include <chrono>
+
+
+#define GOOGLE_GLOG_DLL_DECL
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <gflags/gflags.h>
+#include <glog/logging.h>
+
+#include "paddle/include/paddle_inference_api.h"
 #include "paddlelib.h"
 
-namespace paddle
+using paddle::AnalysisConfig;
+using namespace paddle;
+
+PaddleInference::PaddleInference()
 {
-    namespace lite_api
-    {
-        PaddleLite::PaddleLite()
-        {
-        }
+}
 
-        PaddleLite::~PaddleLite()
-        {
-        }
+PaddleInference::~PaddleInference()
+{
+}
 
-        void PaddleLite::set_model_file(std::string model_name)
-        {
-            config.set_model_from_file(model_name);
-        }
+void PaddleInference::set_combined_model(std::string model_dir)
+{
+    config.SetModel(model_dir);
+    config.SwitchUseFeedFetchOps(false);
+    config.EnableMKLDNN();
+    config.EnableMemoryOptim();
+    predictor = CreatePaddlePredictor(config);
+}
 
-        void PaddleLite::set_threads(int t){
-            config.set_threads(t);
-        }
+float *PaddleInference::infer_float(float *input_data, const std::vector<int>& input_shape)
+{
+    auto input_names = predictor->GetInputNames();
+    auto input_t = predictor->GetInputTensor(input_names[0]);
+    input_t->Reshape(input_shape);
+    input_t->copy_from_cpu<float>(input_data);
 
-        void PaddleLite::set_power_mode(int pm){
-            config.set_power_mode(PowerMode(pm));
-        }
+    CHECK(predictor->ZeroCopyRun());
 
-        int64_t PaddleLite::ShapeProduction(const shape_t &shape)
-        {
-            int64_t res = 1;
-            for (auto i : shape)
-                res *= i;
-            return res;
-        }
+    std::vector<std::string> out_names = predictor->GetOutputNames();
+    std::unique_ptr<ZeroCopyTensor> output_t = predictor->GetOutputTensor(out_names[0]);
+    std::vector<float> out_data;
+    std::vector<int> output_shape = output_t->shape();
+    int out_num = std::accumulate(output_shape.begin(), output_shape.end(), 1, std::multiplies<int>());
+    out_data.resize(out_num);
+    output_t->copy_to_cpu(out_data.data());
+    out_data.insert(out_data.begin(), out_num);
 
-        float* PaddleLite::infer_float(float* input_data, std::vector<int64_t> shape)
-        {
-            predictor = CreatePaddlePredictor<MobileConfig>(config);
-            std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-            input_tensor->Resize(shape);
-            auto *data = input_tensor->mutable_data<float>();
-            int64_t input_shape = ShapeProduction(input_tensor->shape());
-            for (int i = 0; i < input_shape; ++i)
-            {
-                data[i] = *(input_data + i);
-            }
-            predictor->Run();
-
-            std::unique_ptr<const Tensor> output_tensor(
-                std::move(predictor->GetOutput(0)));
-            int64_t output_shape = ShapeProduction(output_tensor->shape());
-            float* output_data = new float[output_shape+1];
-            output_data[0] = output_tensor->shape()[1];
-            for (int i = 0; i < output_shape; i ++){
-                output_data[i+1] = output_tensor->data<float>()[i];
-            }
-            return output_data;
-        }
-    } // namespace lite_api
-} // namespace paddle
+    float *output_data = new float[out_data.size()];
+    std::copy(out_data.begin(), out_data.end(), output_data);
+    return output_data;
+}

@@ -1,28 +1,19 @@
 #ifndef _PADDLELITE_LIB_
 #define _PADDLELITE_LIB_
-#include <iostream>
-#include <vector>
-#include "paddle_api.h"
+#include "paddle/include/paddle_inference_api.h"
 
-namespace paddle
+using paddle::AnalysisConfig;
+
+class PaddleInference
 {
-    namespace lite_api
-    {
-        class PaddleLite
-        {
-        private:
-            MobileConfig config;
-            std::shared_ptr<PaddlePredictor> predictor;
-            int64_t ShapeProduction(const shape_t &shape);
+private:
+    AnalysisConfig config;
+    std::unique_ptr<paddle::PaddlePredictor> predictor;
 
-        public:
-            PaddleLite();
-            ~PaddleLite();
-            void set_model_file(std::string model_name);
-            void set_threads(int);
-            void set_power_mode(int);
-            float* infer_float(float* input_data, std::vector<int64_t> shape);
-        };
-    } // namespace lite_api
-} // namespace paddle
+public:
+    PaddleInference();
+    ~PaddleInference();
+    void set_combined_model(std::string model_name);
+    float *infer_float(float *input_data, const std::vector<int>& input_shape);
+};
 #endif

@@ -1,24 +1,26 @@
 // The author is looking for a good job. :) (Kevin Li https://github.com/kernelerr)
-
 #include <vector>
 #include <node_api.h>
 #include <assert.h>
 #include <opencv2/opencv.hpp>
-#include "paddlelib.h"
+#include "paddle/include/paddle_inference_api.h"
 #include "nodehelper.h"
-using namespace paddle::lite_api;
-using namespace cv;
+#include "paddlelib.h"
 
-PaddleLite paddlelite;
+using paddle::AnalysisConfig;
+using namespace cv;
+using namespace paddle;
+
+PaddleInference paddleinference;
 const std::vector<int64_t> INPUT_SHAPE = {1, 3, 224, 224};
 const std::vector<float> INPUT_MEAN = {0.485f, 0.456f, 0.406f};
 const std::vector<float> INPUT_STD = {0.229f, 0.224f, 0.225f};
 
-napi_value set_model_file(napi_env env, napi_callback_info info)
+napi_value set_combined_model(napi_env env, napi_callback_info info)
 {
     size_t argc = 1;
     napi_value args[1];
-    char *model_file = new char[1001];
+    char *model_dir = new char[1001];
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
     if (argc != 1)
     {
@@ -32,59 +34,35 @@ napi_value set_model_file(napi_env env, napi_callback_info info)
         napi_throw_error(env, NULL, "Wrong argument type.");
         return NULL;
     }
-    NAPI_CALL(env, napi_get_value_string_utf8(env, args[0], model_file, sizeof(char) * 1001, NULL));
-    paddlelite.set_model_file(model_file);
+    NAPI_CALL(env, napi_get_value_string_utf8(env, args[0], model_dir, sizeof(char) * 1001, NULL));
+    paddleinference.set_combined_model(model_dir);
     napi_value result = args[0];
     return result;
 }
 
-napi_value set_threads(napi_env env, napi_callback_info info)
-{
-    size_t argc = 1;
-    napi_value args[1];
-    int32_t threads;
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
-    if (argc != 1)
-    {
-        napi_throw_error(env, NULL, "Check the amount of arguments.");
-        return NULL;
-    }
-    napi_valuetype valuetype;
-    NAPI_CALL(env, napi_typeof(env, args[0], &valuetype));
-    if (valuetype != napi_number)
-    {
-        napi_throw_error(env, NULL, "Wrong argument type.");
-        return NULL;
-    }
-    NAPI_CALL(env, napi_get_value_int32(env, args[0], &threads));
-    paddlelite.set_threads(threads);
-    napi_value result = args[0];
-    return result;
-}
-
-napi_value set_power_mode(napi_env env, napi_callback_info info)
-{
-    size_t argc = 1;
-    napi_value args[1];
-    int32_t powermode;
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
-    if (argc != 1)
-    {
-        napi_throw_error(env, NULL, "Check the amount of arguments.");
-        return NULL;
-    }
-    napi_valuetype valuetype;
-    NAPI_CALL(env, napi_typeof(env, args[0], &valuetype));
-    if (valuetype != napi_number)
-    {
-        napi_throw_error(env, NULL, "Wrong argument type.");
-        return NULL;
-    }
-    NAPI_CALL(env, napi_get_value_int32(env, args[0], &powermode));
-    paddlelite.set_power_mode(powermode);
-    napi_value result = args[0];
-    return result;
-}
+// napi_value set_threads(napi_env env, napi_callback_info info)
+// {
+//     size_t argc = 1;
+//     napi_value args[1];
+//     int32_t threads;
+//     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
+//     if (argc != 1)
+//     {
+//         napi_throw_error(env, NULL, "Check the amount of arguments.");
+//         return NULL;
+//     }
+//     napi_valuetype valuetype;
+//     NAPI_CALL(env, napi_typeof(env, args[0], &valuetype));
+//     if (valuetype != napi_number)
+//     {
+//         napi_throw_error(env, NULL, "Wrong argument type.");
+//         return NULL;
+//     }
+//     NAPI_CALL(env, napi_get_value_int32(env, args[0], &threads));
+//     paddlelite.set_threads(threads);
+//     napi_value result = args[0];
+//     return result;
+// }
 
 napi_value infer_float(napi_env env, napi_callback_info info)
 {
@@ -104,7 +82,7 @@ napi_value infer_float(napi_env env, napi_callback_info info)
         napi_throw_error(env, NULL, "Wrong argument type.");
         return NULL;
     }
-    std::vector<int64_t> shape;
+    std::vector<int> shape;
     uint32_t i, input_length, shape_length, input_size = 1;
     NAPI_CALL(env, napi_get_array_length(env, args[0], &input_length));
     NAPI_CALL(env, napi_get_array_length(env, args[1], &shape_length));
@@ -132,7 +110,7 @@ napi_value infer_float(napi_env env, napi_callback_info info)
         *(input_data + i) = (float)g;
     }
     float *infer_res;
-    infer_res = paddlelite.infer_float(input_data, shape);
+    infer_res = paddleinference.infer_float(input_data, shape);
     napi_value ret;
     NAPI_CALL(env, napi_create_array(env, &ret));
     for (i = 0; i < *infer_res - 1; i++)
@@ -207,7 +185,7 @@ napi_value image_file_classification(napi_env env, napi_callback_info info)
         }
         NAPI_CALL(env, napi_get_value_bool(env, args[5], &swapRB));
         Mat inputBlob = dnn::blobFromImage(input_image, scalefactor, Size(size[0], size[1]), Scalar(mean[0], mean[1], mean[2]), swapRB);
-        std::vector<int64_t> shape;
+        std::vector<int> shape;
         NAPI_CALL(env, napi_get_array_length(env, args[1], &shape_length));
         for (i = 0; i < shape_length; i++)
         {
@@ -218,7 +196,7 @@ napi_value image_file_classification(napi_env env, napi_callback_info info)
             shape.push_back(g);
         }
         float *infer_res;
-        infer_res = paddlelite.infer_float((float *)inputBlob.data, shape);
+        infer_res = paddleinference.infer_float((float *)inputBlob.data, shape);
         napi_value ret;
         NAPI_CALL(env, napi_create_array(env, &ret));
         for (i = 0; i < *infer_res - 1; i++)
@@ -245,12 +223,10 @@ napi_value Init(napi_env env, napi_value exports)
 {
     napi_status status;
     napi_property_descriptor descriptors[] = {
-        DECLARE_NAPI_METHOD("set_model_file", set_model_file),
-        DECLARE_NAPI_METHOD("set_threads", set_threads),
-        DECLARE_NAPI_METHOD("set_power_mode", set_power_mode),
+        DECLARE_NAPI_METHOD("set_combined_model", set_combined_model),
         DECLARE_NAPI_METHOD("infer_float", infer_float),
         DECLARE_NAPI_METHOD("image_file_classification", image_file_classification)};
-    status = napi_define_properties(env, exports, 5, descriptors);
+    status = napi_define_properties(env, exports, 3, descriptors);
     assert(status == napi_ok);
     return exports;
 }

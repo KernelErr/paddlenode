@@ -1,7 +1,7 @@
 {
     'variables': {
-        'lite_dir%': '', #C:/inference_lite_lib.win.x86.MSVC.C++_static.py37.full_publish
-        'opencv_dir%': '' #C:/opencv/build
+        'paddle_lib%': '', #C:/fluid_inference_install_dir
+        'opencv_dir%': ''  # C:/opencv/build
     },
     "targets": [
         {
@@ -13,14 +13,24 @@
                 "./src/paddlenode.cc",
             ],
             'include_dirs': [
-                "<(lite_dir)/cxx/include",
-                "<(lite_dir)/third_party/mklml/include",
+                "<(paddle_lib)",
+                "<(paddle_lib)/third_party/install/glog/include",
+                "<(paddle_lib)/third_party/install/gflags/include",
+                "<(paddle_lib)/third_party/install/protobuf/include",
+                "<(paddle_lib)/third_party/install/xxhash/include",
+                "<(paddle_lib)/third_party/install/mkldnn/include",
+                "<(paddle_lib)/third_party/install/mklml/include",
                 "<(opencv_dir)/include"
             ],
             'libraries': [
-                "-l<(lite_dir)/cxx/lib/libpaddle_api_light_bundled.lib",
-                "-l<(lite_dir)/third_party/mklml/lib/libiomp5md.lib",
-                "-l<(lite_dir)/third_party/mklml/lib/mklml.lib",
+                "-l<(paddle_lib)/third_party/install/glog/lib/glog.lib",
+                "-l<(paddle_lib)/third_party/install/gflags/lib/gflags_static.lib",
+                "-l<(paddle_lib)/third_party/install/protobuf/lib/libprotobuf.lib",
+                "-l<(paddle_lib)/third_party/install/xxhash/lib/xxhash.lib",
+                "-l<(paddle_lib)/third_party/install/mkldnn/lib/mkldnn.lib",
+                "-l<(paddle_lib)/third_party/install/mklml/lib/mklml.lib",
+                "-l<(paddle_lib)/third_party/install/mklml/lib/libiomp5md.lib",
+                "-l<(paddle_lib)/paddle/lib/libpaddle_fluid.lib",
                 "-lshlwapi.lib",
                 "-l<(opencv_dir)/x64/vc15/lib/opencv_world440.lib",
                 "-l<(opencv_dir)/x64/vc15/lib/opencv_world440d.lib"
